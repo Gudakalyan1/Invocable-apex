@@ -1,21 +1,28 @@
 public with sharing class deleteOpportunity {
-    @InvocableMethod(label= 'DeleteOpportunity')
-    public static void deleteOpportunity(list<Account>Accounts){
-        set<Id> AccId = new set<Id> ();
-         list<Opportunity> deleteOpp = new list <Opportunity> ();
-        for(Account Acc :Accounts){
-            if (Acc.Account_Status__c!='Active') {
-               AccId.add(Acc.Id) ;  
-            }
-       }
-       list<Opportunity> Opplist =[select Id ,Name, AccountId From Opportunity where AccountId IN :AccId and StageName ='Closed Won	'];
-       for(Opportunity Opp :Opplist){
-        deleteOpp.add(Opp);
-       }
-       IF(!deleteOpp.IsEmpty()){
-        delete deleteOpp;
-      }
+    @InvocableMethod(label = 'DeleteOpportunity')
+    public static void deleteOpportunity(List<Account> accounts) {
+        Set<Id> inactiveAccountIds = new Set<Id>();
+        List<Opportunity> opportunitiesToDelete = new List<Opportunity>();
 
-       }
-       
+        for (Account acc : accounts) {
+            if (acc.Account_Status__c != 'Active') {
+                inactiveAccountIds.add(acc.Id);
+            }
+        }
+
+        List<Opportunity> closedWonOpportunities = [
+            SELECT Id, Name, AccountId 
+            FROM Opportunity 
+            WHERE AccountId IN :inactiveAccountIds 
+                AND StageName = 'Closed Won'
+        ];
+
+        for (Opportunity opp : closedWonOpportunities) {
+            opportunitiesToDelete.add(opp);
+        }
+
+        if (!opportunitiesToDelete.isEmpty()) {
+            delete opportunitiesToDelete;
+        }
     }
+}
