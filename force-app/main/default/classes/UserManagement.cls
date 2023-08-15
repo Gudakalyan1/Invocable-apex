@@ -1,40 +1,22 @@
-public with sharing class UserManagement {
+public class UserManagement {
     @Future
-    public static void deactiveUser( list<Id> DeactivatedUserId) {
-        map<Id,Opportunity> Managers =new map<Id,Opportunity> ();
-        list<Opportunity> OpptoUpdate = new list<Opportunity> ();
-        list<User> DeactivatedUser = [Select Id,ManagerId ,Name,IsActive From User 
-        where Id IN :DeactivatedUserId AND IsActive!=True ];
-        for(User ur :DeactivatedUser){
-            if(ur.IsActive !=True){
-                DeactivatedUserId.add(ur.Id);
+    public static void UpdateOpps (list<Id> userId ,Map<Id,Id> managerIds){
+        list<Opportunity>Opptoupdate = new list<Opportunity> ();
+        List<Opportunity> Opps =[select Id ,OwnerId ,StageName From Opportunity 
+        where OwnerId IN :userId AND Stagename !='ClosedWon'];
+        for(Opportunity opp : Opps){
+            Id manager = ManagerIds.get(opp.OwnerId);
+            opp.OwnerId = manager;
+            Opptoupdate.add(opp);
 
+        }
+        if(!Opptoupdate.isEmpty()){
+            try {
+                update Opptoupdate;
+            } catch (Exception ex) {
+                system.debug('Errors'+ex);
+                
             }
         }
-        Map<Id,User>inactiveusers =new map<Id,User>([Select Id,Name,IsActive,ManagerId From User Where Id IN :DeactivatedUserId]);
-        list<Opportunity> userOpenOpp =[select Id,Name,OwnerId,StageName From Opportunity 
-        where OwnerId IN :DeactivatedUserId And (StageName !='Closed Won' OR StageName != 'Closed Lost')];
-
-        For(Opportunity opp :userOpenOpp){
-            if(userOpenOpp!=null){
-             User us = inactiveusers.get(opp.OwnerId);
-             if(inactiveusers.containsKey(opp.OwnerId)&inactiveusers !=null){
-                opp.OwnerId =us.ManagerId ;
-               OpptoUpdate.add(opp);
-
-             }
-
-            }
-        }
-        try {
-            if(!OpptoUpdate.isEmpty()){
-                update OpptoUpdate ;
-            }
-            
-        } catch (Exception e) {
-            system.debug('Errors Occured'+e);
-            
-        }
-
     }
 }
